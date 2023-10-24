@@ -10,25 +10,24 @@ class NeuralNetwork {
     this.b = [];
     this.f = [];
 
-    this.__inputActivation = null;
-    this.__wActivations = [];
-    this.__fActivations = [];
+    this.inputZ = 0;
+
+    this.hiddenO = [];
+    this.hiddenZ = [];
 
     this.init();
   }
 
   init() {
-    this.w = this.__randomArrayInRange(this.hiddenNeuronNum, -0.5, 0.5);
-    this.b = this.__randomArrayInRange(this.hiddenNeuronNum, -0.5, 0.5);
-    this.f = this.__randomArrayInRange(this.hiddenNeuronNum, -0.5, 0.5);
+    const __randomArrayInRange = (len, min, max) => (new Array(len)).fill(null).map(() => Math.random() * (max - min) + min);
+    
+    this.w = __randomArrayInRange(this.hiddenNeuronNum, -0.5, 0.5);
+    this.b = __randomArrayInRange(this.hiddenNeuronNum, -25, 25);
+    this.f = __randomArrayInRange(this.hiddenNeuronNum, -0.5, 0.5);
 
-    this.__inputActivation = 0;
-    this.__wActivations = new Array(this.hiddenNeuronNum).fill(0);
-    this.__fActivations = new Array(this.hiddenNeuronNum).fill(0);
-  }
-
-  __randomArrayInRange(len, min, max) {
-    return (new Array(len)).fill(null).map(() => Math.random() * (max - min) + min);
+    this.inputZ = 0;
+    this.hiddenO = new Array(this.hiddenNeuronNum).fill(0);
+    this.hiddenZ = new Array(this.hiddenNeuronNum).fill(0);
   }
 
   relu(x){
@@ -37,15 +36,15 @@ class NeuralNetwork {
   }
 
   forward(x, updateActivations=false) {
-    if (updateActivations) this.__inputActivation = x;
+    if (updateActivations) this.inputZ = x;
 
     let y = 0;
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
       let cur = this.w[i] * x + this.b[i];
-      if (updateActivations) this.__wActivations[i] = cur;
+      if (updateActivations) this.hiddenO[i] = cur;
 
       cur = this.relu(cur);
-      if (updateActivations) this.__fActivations[i] = cur;
+      if (updateActivations) this.hiddenZ[i] = cur;
 
       y += cur * this.f[i];
     }
@@ -54,9 +53,12 @@ class NeuralNetwork {
   }
 
   resetActivations() {
-    // this.__inputActivation = 0;
-    // this.__wActivations = new Array(this.hiddenNeuronNum).fill(0);
-    // this.__fActivations = new Array(this.hiddenNeuronNum).fill(0);
+    this.inputZ = 0;
+
+    for (let i = 0; i < this.hiddenNeuronNum; i++) {
+      this.hiddenO[i] = 0;
+      this.hiddenZ[i] = 0;
+    }
   }
 
   error(y, y_hat) {
@@ -67,13 +69,21 @@ class NeuralNetwork {
     this.totalHiddenDelta = 0;
 
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
-      let df = error * this.f[i] * (this.__fActivations[i]) * lr;
+      let df = error * this.f[i] * (this.hiddenZ[i]) * lr;
+
+      if (df > clipThreshold) df = clipThreshold;
+      if (df < -clipThreshold) df = -clipThreshold;
+
       this.totalHiddenDelta += df;
       this.f[i] -= df;
     }
 
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
-      let dw = this.totalHiddenDelta * this.w[i] * (this.__inputActivation) * lr;
+      let dw = this.totalHiddenDelta * this.w[i] * (this.inputZ) * lr;
+
+      if (dw > clipThreshold) dw = clipThreshold;
+      if (dw < -clipThreshold) dw = -clipThreshold;
+
       this.w[i] -= dw;
     }
   }

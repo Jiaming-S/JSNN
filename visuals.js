@@ -73,16 +73,19 @@ class Screen {
 
 
 
+
+
+
+
 const canvas = document.getElementById('main-canvas');
 const ctx = canvas.getContext('2d');
 
 const domain = [0, 160]; 
 const range = [-45, 45];
-const domainScaleFactor = canvas.width / (domain[1] - domain[0]); 
-const rangeScaleFactor = canvas.height / (range[1] - range[0]); 
+let domainScaleFactor = canvas.width / (domain[1] - domain[0]); 
+let rangeScaleFactor = canvas.height / (range[1] - range[0]); 
 
 const screen = new Screen();
-// const nn = new NeuralNetwork(3);
 const nn = new NeuralNetwork(1);
 
 const plottedPoints = screen.generatePointsAlongCurve(80, (x) => 3 * Math.cbrt(x * 100) - 50, domain);
@@ -129,4 +132,30 @@ function train(lr=0.001, epochs=1) {
 
 
 
+
+
+
+
+
+let mouseHeld = false;
+document.addEventListener('mousedown', (e) => (mouseHeld = true));
+document.addEventListener('mouseup', (e) => (mouseHeld = false));
+document.addEventListener('mousemove', (e) => {
+  if (mouseHeld) {
+    const dx = e.movementX;
+    const dy = e.movementY;
+    const x = screen.centeredPoint.x - dx;
+    const y = screen.centeredPoint.y - dy;
+    screen.setCenteredPoint(x, y);
+    render();
+  }
+});
+
+document.addEventListener('wheel', (e) => {
+  const delta = e.deltaY;
+  console.log(delta);
+  domainScaleFactor += delta / 100;
+  rangeScaleFactor += delta / 100;
+  render();
+});
 
