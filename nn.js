@@ -18,9 +18,9 @@ class NeuralNetwork {
   }
 
   init() {
-    this.w = this.__randomArrayInRange(this.hiddenNeuronNum, -0.25, 0.25);
+    this.w = this.__randomArrayInRange(this.hiddenNeuronNum, -0.5, 0.5);
     this.b = this.__randomArrayInRange(this.hiddenNeuronNum, -0.5, 0.5);
-    this.f = this.__randomArrayInRange(this.hiddenNeuronNum, -0.25, 0.25);
+    this.f = this.__randomArrayInRange(this.hiddenNeuronNum, -0.5, 0.5);
 
     this.__inputActivation = 0;
     this.__wActivations = new Array(this.hiddenNeuronNum).fill(0);
@@ -32,19 +32,20 @@ class NeuralNetwork {
   }
 
   relu(x){
-    return Math.max(0, x);
+    // return Math.max(0, x);
+    return x;
   }
 
-  forward(x, updateActivations=true) {
+  forward(x, updateActivations=false) {
     if (updateActivations) this.__inputActivation = x;
 
     let y = 0;
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
       let cur = this.w[i] * x + this.b[i];
-      if (updateActivations) this.__wActivations[i] += cur;
+      if (updateActivations) this.__wActivations[i] = cur;
 
       cur = this.relu(cur);
-      if (updateActivations) this.__fActivations[i] += cur;
+      if (updateActivations) this.__fActivations[i] = cur;
 
       y += cur * this.f[i];
     }
@@ -53,53 +54,52 @@ class NeuralNetwork {
   }
 
   resetActivations() {
-    this.__inputActivation = 0;
-    this.__wActivations = new Array(this.hiddenNeuronNum).fill(0);
-    this.__fActivations = new Array(this.hiddenNeuronNum).fill(0);
+    // this.__inputActivation = 0;
+    // this.__wActivations = new Array(this.hiddenNeuronNum).fill(0);
+    // this.__fActivations = new Array(this.hiddenNeuronNum).fill(0);
   }
 
-  __calcError(x, y) {
-    return (y - this.forward(x)) ** 2;
+  error(y, y_hat) {
+    return y - y_hat;
   }
 
-  MSE(points) {
-    let sum = 0;
-
-    for (let i = 0; i < points.length; i++) {
-      const x = points[i].x;
-      const y = points[i].y;
-      sum += this.__calcError(x, y);
-    }
-
-    return sum / points.length;
-  }
-
-  backwards(x, y, points, lr, clipThreshold=1) {
-    let error = this.MSE(points);
-    let grad = error * (this.forward(x, updateActivations=false) - y);
+  backwards(error, lr, clipThreshold=1) {
+    this.totalHiddenDelta = 0;
 
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
-      let df = lr * grad * this.__fActivations[i];
-      let dw = lr * grad * this.__inputActivation;
-      let db = lr * grad;
-
-      const gradientL2Norm = Math.sqrt(df * df + dw * dw + db * db);
-      if (gradientL2Norm > clipThreshold) {
-        df *= clipThreshold / gradientL2Norm;
-        dw *= clipThreshold / gradientL2Norm;
-        db *= clipThreshold / gradientL2Norm;
-      }
-
+      let df = error * this.f[i] * (this.__fActivations[i]) * lr;
+      this.totalHiddenDelta += df;
       this.f[i] -= df;
+    }
 
-      if (this.__fActivations[i] > 0) {
-        this.w[i] -= dw
-      }
-
-      this.b[i] -= db
+    for (let i = 0; i < this.hiddenNeuronNum; i++) {
+      let dw = this.totalHiddenDelta * this.w[i] * (this.__inputActivation) * lr;
+      this.w[i] -= dw;
     }
   }
 }
 
+/*
+
+# Backpropagate error and store in neurons 
+def backward_propagate_error(network, expected): 
+  for i in reversed(range(len(network))): 
+    layer = network[i] 
+    errors = list() 
+    if i != len(network)-1: 
+      for j in range(len(layer)): 
+        error = 0.0 
+        for neuron in network[i + 1]: 
+          error += (neuron['weights'][j] * neuron['delta']) 
+        errors.append(error) 
+    else: 
+      for j in range(len(layer)): 
+        neuron = layer[j] 
+        errors.append(expected[j] - neuron['output']) 
+    for j in range(len(layer)): 
+      neuron = layer[j] 
+      neuron['delta'] = errors[j] * transfer_derivative(neuron['output']) 
+
+*/
 
 

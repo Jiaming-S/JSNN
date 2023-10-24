@@ -82,14 +82,14 @@ const domainScaleFactor = canvas.width / (domain[1] - domain[0]);
 const rangeScaleFactor = canvas.height / (range[1] - range[0]); 
 
 const screen = new Screen();
-const nn = new NeuralNetwork(3);
+// const nn = new NeuralNetwork(3);
+const nn = new NeuralNetwork(1);
 
 const plottedPoints = screen.generatePointsAlongCurve(80, (x) => 3 * Math.cbrt(x * 100) - 50, domain);
 
 function render () {  
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // draw x-axis line
   screen.drawLine(domain[0], 0, domain[1], 0);
 
   plottedPoints.forEach(point => screen.plotPoint(point.x, point.y));
@@ -102,18 +102,24 @@ function render () {
 }
 
 
-function train(lr=0.000001) {
+function train(lr=0.001, epochs=1) {
+  let data = plottedPoints;
+  // data = data.sort((a, b) => 0.5 - Math.random());
+  
+  for (let i = 0; i < epochs; i++) {
+    for (let j = 0; j < data.length; j++)  {
+      const datapoint = data[j];
 
-  for (let i = 20; i < plottedPoints.length; i++) {
-    const x = plottedPoints[i].x;
-    const y = plottedPoints[i].y;
-    nn.backwards(x, y, plottedPoints, lr);
-    nn.resetActivations();
-
-    break;
+      const y_hat = nn.forward(datapoint.x, updateActivations=true);
+      const error = nn.error(datapoint.y, y_hat);
+      
+      nn.backwards(error, lr);
+      nn.resetActivations();
+  
+      break;
+    }
   }
 
-  console.log("Error: " + nn.MSE(plottedPoints));
   render();
 }
 
