@@ -21,18 +21,17 @@ class NeuralNetwork {
   init() {
     const __randomArrayInRange = (len, min, max) => (new Array(len)).fill(null).map(() => Math.random() * (max - min) + min);
     
-    this.w = __randomArrayInRange(this.hiddenNeuronNum, -0.5, 0.5);
-    this.b = __randomArrayInRange(this.hiddenNeuronNum, -25, 25);
-    this.f = __randomArrayInRange(this.hiddenNeuronNum, -0.5, 0.5);
+    this.w = __randomArrayInRange(this.hiddenNeuronNum, 0.1, 0.25);
+    this.b = __randomArrayInRange(this.hiddenNeuronNum, -100, 200);  
+    this.f = __randomArrayInRange(this.hiddenNeuronNum, 0.1, 0.25);
 
     this.inputZ = 0;
     this.hiddenO = new Array(this.hiddenNeuronNum).fill(0);
-    this.hiddenZ = new Array(this.hiddenNeuronNum).fill(0);
+    this.hiddenZ = new Array(this.hiddenNeuronNum).fill(0); 
   }
 
   relu(x){
-    // return Math.max(0, x);
-    return x;
+    return Math.max(0, x);
   }
 
   forward(x, updateActivations=false) {
@@ -65,27 +64,49 @@ class NeuralNetwork {
     return y - y_hat;
   }
 
-  backwards(error, lr, clipThreshold=1) {
+  backwards(error, lr, clipThreshold=0.25) {
     this.totalHiddenDelta = 0;
 
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
       let df = error * this.f[i] * (this.hiddenZ[i]) * lr;
 
-      if (df > clipThreshold) df = clipThreshold;
+      if (df >  clipThreshold) df =  clipThreshold;
       if (df < -clipThreshold) df = -clipThreshold;
 
       this.totalHiddenDelta += df;
-      this.f[i] -= df;
+      this.f[i] += df;
     }
 
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
       let dw = this.totalHiddenDelta * this.w[i] * (this.inputZ) * lr;
 
-      if (dw > clipThreshold) dw = clipThreshold;
+      if (dw >  clipThreshold) dw =  clipThreshold;
       if (dw < -clipThreshold) dw = -clipThreshold;
 
-      this.w[i] -= dw;
+      this.w[i] += dw;
     }
+  }
+
+  train(data, epochs=1, lr=0.0001, debug=false) {
+    let trainingError = 0;
+    for (let i = 0; i < epochs; i++) {
+      trainingError = 0;
+      for (let j = 0; j < data.length; j++)  {
+        const datapoint = data[j];
+  
+        const y_hat = this.forward(datapoint.x, updateActivations=true);
+        const error = this.error(datapoint.y, y_hat);
+        
+        this.backwards(error, lr);
+        this.resetActivations();
+
+        trainingError += Math.abs(error);
+        if (debug) console.log("Datapoint " + j + " (x=" + datapoint.x + ")\n " + "y_hat: " + y_hat + ", y: " + datapoint.y + ", error: " + error);
+      }
+      if (debug) console.log("epoch " + (i+1) + ": " + trainingError);
+      render();
+    }
+    console.log("Training complete.\nFinal Error: " + trainingError + "\n");
   }
 }
 

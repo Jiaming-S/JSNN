@@ -8,11 +8,13 @@ class Screen {
     this.translatedX = 0;
     this.translatedY = 0;
 
+    this.reflectOverXAxis = true;
+
     this.init();
   }
 
   init() {
-    this.setCenteredPoint(this.width / 2, 0);
+    this.setCenteredPoint(this.width / 2 - 10, this.height / 2 - 10);
   }
 
   setCenteredPoint(x, y) {
@@ -32,6 +34,7 @@ class Screen {
 
     y *= rangeScaleFactor;
     y += this.translatedY;
+    if (this.reflectOverXAxis) y = this.height - y;
 
     ctx.fillStyle = color;
     ctx.fillRect(x, y, 2, 2);
@@ -46,9 +49,11 @@ class Screen {
 
     y1 *= rangeScaleFactor;
     y1 += this.translatedY;
+    if (this.reflectOverXAxis) y1 = this.height - y1;
 
     y2 *= rangeScaleFactor;
     y2 += this.translatedY;
+    if (this.reflectOverXAxis) y2 = this.height - y2;
 
     ctx.strokeStyle = color;
     ctx.beginPath();
@@ -73,10 +78,6 @@ class Screen {
 
 
 
-
-
-
-
 const canvas = document.getElementById('main-canvas');
 const ctx = canvas.getContext('2d');
 
@@ -86,14 +87,15 @@ let domainScaleFactor = canvas.width / (domain[1] - domain[0]);
 let rangeScaleFactor = canvas.height / (range[1] - range[0]); 
 
 const screen = new Screen();
-const nn = new NeuralNetwork(1);
+const nn = new NeuralNetwork(3);
 
-const plottedPoints = screen.generatePointsAlongCurve(80, (x) => 3 * Math.cbrt(x * 100) - 50, domain);
+const plottedPoints = screen.generatePointsAlongCurve(80, (x) => 3 * Math.cbrt(x * 100), domain);
 
 function render () {  
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   screen.drawLine(domain[0], 0, domain[1], 0);
+  screen.drawLine(0, range[0], 0, range[1]);
 
   plottedPoints.forEach(point => screen.plotPoint(point.x, point.y));
   
@@ -103,32 +105,10 @@ function render () {
     screen.plotPoint(i, y, 'red');
   }
 }
-
-
-function train(lr=0.001, epochs=1) {
-  let data = plottedPoints;
-  // data = data.sort((a, b) => 0.5 - Math.random());
-  
-  for (let i = 0; i < epochs; i++) {
-    for (let j = 0; j < data.length; j++)  {
-      const datapoint = data[j];
-
-      const y_hat = nn.forward(datapoint.x, updateActivations=true);
-      const error = nn.error(datapoint.y, y_hat);
-      
-      nn.backwards(error, lr);
-      nn.resetActivations();
-  
-      break;
-    }
-  }
-
-  render();
-}
+render();
 
 
 
-(render)();
 
 
 
@@ -142,8 +122,10 @@ document.addEventListener('mousedown', (e) => (mouseHeld = true));
 document.addEventListener('mouseup', (e) => (mouseHeld = false));
 document.addEventListener('mousemove', (e) => {
   if (mouseHeld) {
-    const dx = e.movementX;
-    const dy = e.movementY;
+    let dx = e.movementX;
+    let dy = e.movementY;
+    if (screen.reflectOverXAxis) dy *= -1;
+    
     const x = screen.centeredPoint.x - dx;
     const y = screen.centeredPoint.y - dy;
     screen.setCenteredPoint(x, y);
@@ -153,7 +135,6 @@ document.addEventListener('mousemove', (e) => {
 
 document.addEventListener('wheel', (e) => {
   const delta = e.deltaY;
-  console.log(delta);
   domainScaleFactor += delta / 100;
   rangeScaleFactor += delta / 100;
   render();
