@@ -34,6 +34,10 @@ class NeuralNetwork {
     return Math.max(0, x);
   }
 
+  reluDerivative(x){
+    return (x >= 0 ? x : 0);
+  }
+
   forward(x, updateActivations=false) {
     if (updateActivations) this.inputZ = x;
 
@@ -64,26 +68,41 @@ class NeuralNetwork {
     return y - y_hat;
   }
 
-  backwards(error, lr, clipThreshold=0.25) {
+  backwards(error, lr) {
     this.totalHiddenDelta = 0;
 
+    // update f
+    const fClipThreshold = 0.25;
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
       let df = error * this.f[i] * (this.hiddenZ[i]) * lr;
 
-      if (df >  clipThreshold) df =  clipThreshold;
-      if (df < -clipThreshold) df = -clipThreshold;
+      if (df >  fClipThreshold) df =  fClipThreshold;
+      if (df < -fClipThreshold) df = -fClipThreshold;
 
       this.totalHiddenDelta += df;
       this.f[i] += df;
     }
 
+    // update w
+    const wClipThreshold = 0.25;
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
       let dw = this.totalHiddenDelta * this.w[i] * (this.inputZ) * lr;
 
-      if (dw >  clipThreshold) dw =  clipThreshold;
-      if (dw < -clipThreshold) dw = -clipThreshold;
+      if (dw >  wClipThreshold) dw =  wClipThreshold;
+      if (dw < -wClipThreshold) dw = -wClipThreshold;
 
       this.w[i] += dw;
+    }
+
+    // update b
+    const bClipThreshold = 10;
+    for (let i = 0; i < this.hiddenNeuronNum; i++) {
+      let db = this.totalHiddenDelta * this.b[i] * 1 * lr;
+
+      if (db >  bClipThreshold) db =  bClipThreshold;
+      if (db < -bClipThreshold) db = -bClipThreshold;
+
+      this.b[i] += db;
     }
   }
 
