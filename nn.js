@@ -21,21 +21,21 @@ class NeuralNetwork {
   init() {
     const __randomArrayInRange = (len, min, max) => (new Array(len)).fill(null).map(() => Math.random() * (max - min) + min);
     
-    this.w = __randomArrayInRange(this.hiddenNeuronNum, 0, 5);
-    this.b = __randomArrayInRange(this.hiddenNeuronNum, -640, 640);  
-    this.f = __randomArrayInRange(this.hiddenNeuronNum, 0, 5);
+    this.w = __randomArrayInRange(this.hiddenNeuronNum, -0.5, 0.5);
+    this.b = __randomArrayInRange(this.hiddenNeuronNum, -10, 10);  
+    this.f = __randomArrayInRange(this.hiddenNeuronNum, -0.5, 0.5);
 
     this.inputZ = 0;
     this.hiddenO = new Array(this.hiddenNeuronNum).fill(0);
     this.hiddenZ = new Array(this.hiddenNeuronNum).fill(0); 
   }
 
-  sigmoid(x){
-    return 1 / (1 + Math.exp(-x));
+  relu(x){
+    return Math.max(0, x);
   }
 
-  sigmoidDerivative(x){
-    return this.sigmoid(x) * (1 - this.sigmoid(x));
+  reluDerivative(x){
+    return x > 0 ? 1 : 0;
   }
 
   forward(x, updateActivations=false) {
@@ -46,7 +46,7 @@ class NeuralNetwork {
       let cur = this.w[i] * x + this.b[i];
       if (updateActivations) this.hiddenO[i] = cur;
 
-      cur = this.sigmoid(cur);
+      cur = this.relu(cur);
       if (updateActivations) this.hiddenZ[i] = cur;
 
       y += cur * this.f[i];
@@ -86,7 +86,7 @@ class NeuralNetwork {
     // update w
     const wClipThreshold = 3.5;
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
-      let dw = this.totalHiddenDelta * this.w[i] * this.sigmoidDerivative(this.hiddenO[i]) * this.inputZ * lr;
+      let dw = this.totalHiddenDelta * this.w[i] * this.reluDerivative(this.hiddenO[i]) * this.inputZ * lr;
 
       if (dw >  wClipThreshold) dw =  wClipThreshold;
       if (dw < -wClipThreshold) dw = -wClipThreshold;
@@ -97,7 +97,7 @@ class NeuralNetwork {
     // update b
     const bClipThreshold = 10;
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
-      let db = this.totalHiddenDelta * this.b[i] * this.sigmoidDerivative(this.hiddenO[i]) * 1 * lr;
+      let db = this.totalHiddenDelta * this.b[i] * this.reluDerivative(this.hiddenO[i]) * 1 * lr;
 
 
       if (db >  bClipThreshold) db =  bClipThreshold;
