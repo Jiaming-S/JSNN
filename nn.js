@@ -21,21 +21,21 @@ class NeuralNetwork {
   init() {
     const __randomArrayInRange = (len, min, max) => (new Array(len)).fill(null).map(() => Math.random() * (max - min) + min);
     
-    this.w = __randomArrayInRange(this.hiddenNeuronNum, 0.1, 0.25);
-    this.b = __randomArrayInRange(this.hiddenNeuronNum, -100, 200);  
-    this.f = __randomArrayInRange(this.hiddenNeuronNum, 0.1, 0.25);
+    this.w = __randomArrayInRange(this.hiddenNeuronNum, 0, 5);
+    this.b = __randomArrayInRange(this.hiddenNeuronNum, -640, 640);  
+    this.f = __randomArrayInRange(this.hiddenNeuronNum, 0, 5);
 
     this.inputZ = 0;
     this.hiddenO = new Array(this.hiddenNeuronNum).fill(0);
     this.hiddenZ = new Array(this.hiddenNeuronNum).fill(0); 
   }
 
-  relu(x){
-    return Math.max(0, x);
+  sigmoid(x){
+    return 1 / (1 + Math.exp(-x));
   }
 
-  reluDerivative(x){
-    return (x >= 0 ? x : 0);
+  sigmoidDerivative(x){
+    return this.sigmoid(x) * (1 - this.sigmoid(x));
   }
 
   forward(x, updateActivations=false) {
@@ -46,7 +46,7 @@ class NeuralNetwork {
       let cur = this.w[i] * x + this.b[i];
       if (updateActivations) this.hiddenO[i] = cur;
 
-      cur = this.relu(cur);
+      cur = this.sigmoid(cur);
       if (updateActivations) this.hiddenZ[i] = cur;
 
       y += cur * this.f[i];
@@ -72,7 +72,7 @@ class NeuralNetwork {
     this.totalHiddenDelta = 0;
 
     // update f
-    const fClipThreshold = 0.25;
+    const fClipThreshold = 2.5;
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
       let df = error * this.f[i] * (this.hiddenZ[i]) * lr;
 
@@ -84,9 +84,9 @@ class NeuralNetwork {
     }
 
     // update w
-    const wClipThreshold = 0.25;
+    const wClipThreshold = 3.5;
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
-      let dw = this.totalHiddenDelta * this.w[i] * (this.inputZ) * lr;
+      let dw = this.totalHiddenDelta * this.w[i] * this.sigmoidDerivative(this.hiddenO[i]) * this.inputZ * lr;
 
       if (dw >  wClipThreshold) dw =  wClipThreshold;
       if (dw < -wClipThreshold) dw = -wClipThreshold;
@@ -97,7 +97,8 @@ class NeuralNetwork {
     // update b
     const bClipThreshold = 10;
     for (let i = 0; i < this.hiddenNeuronNum; i++) {
-      let db = this.totalHiddenDelta * this.b[i] * 1 * lr;
+      let db = this.totalHiddenDelta * this.b[i] * this.sigmoidDerivative(this.hiddenO[i]) * 1 * lr;
+
 
       if (db >  bClipThreshold) db =  bClipThreshold;
       if (db < -bClipThreshold) db = -bClipThreshold;

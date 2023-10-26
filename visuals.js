@@ -87,7 +87,7 @@ let domainScaleFactor = canvas.width / (domain[1] - domain[0]);
 let rangeScaleFactor = canvas.height / (range[1] - range[0]); 
 
 const screen = new Screen();
-const nn = new NeuralNetwork(3);
+const nn = new NeuralNetwork(20);
 
 const plottedPoints = screen.generatePointsAlongCurve(80, (x) => 3 * Math.cbrt(x * 100), domain);
 
