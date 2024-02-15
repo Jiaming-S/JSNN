@@ -153,4 +153,34 @@ def backward_propagate_error(network, expected):
 
 */
 
+/*
 
+function BACK-PROP-LEARNING(examples, network) returns a neural network
+ inputs examples, a set of examples, each with input vector x and output vector y
+    network, a multilayer network with L layers, weights wi,j, activation function g
+ local variables: Δ, a vector of errors, indexed by network node
+
+ repeat
+   for each weight wi,j in network do
+     wi,j ← a small random number
+   for each example (x, y) in examples do
+     !-- Propagate the inputs forward to compute the outputs  --!
+     for each node i in the input layer do
+       ai ← xi
+     for l = 2 to L do
+       for each node j in layer l do
+         inj ← Σi wi,j ai
+         aj ← g(inj)
+     !-- Propagate deltas backward from output layer to input layer --!
+     for each node j in the output layer do
+       Δ[j] ← g′(inj) × (yi − aj)
+     for l = L − 1 to 1 do
+       for each node i in layer l do
+         Δ[i] ← g′(ini) Σj wi,j Δ[j]
+     !-- Update every weight in network using deltas --!
+     for each weight wi,j in network do
+       wi,j ← wi,j + α × ai × Δ[j]
+ until some stopping criterion is satisfied
+ return network
+
+*/
