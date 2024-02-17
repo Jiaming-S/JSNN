@@ -61,19 +61,19 @@ class Screen {
     ctx.lineTo(x2, y2);
     ctx.stroke();
   }
+}
 
-  generatePointsAlongCurve(pointsNum, curve, domain, fuzz=10) {
-    const stepSize = (domain[1] - domain[0]) / pointsNum;
+function generatePointsAlongCurve(pointsNum, curve, domain, fuzz=0.1) {
+  const stepSize = (domain[1] - domain[0]) / pointsNum;
 
-    const points = [];
-    for (let i = 0; i < pointsNum; i++) {
-      const x = domain[0] + i * stepSize;
-      const y = curve(x) + (Math.random() - 0.5) * fuzz;
-      points.push({x, y});
-    }
-
-    return points;
+  const points = [];
+  for (let i = 0; i < pointsNum; i++) {
+    const x = domain[0] + i * stepSize;
+    const y = curve(x) + (Math.random() - 0.5) * fuzz;
+    points.push({x, y});
   }
+
+  return points;
 }
 
 
@@ -81,15 +81,15 @@ class Screen {
 const canvas = document.getElementById('main-canvas');
 const ctx = canvas.getContext('2d');
 
-const domain = [0, 160]; 
-const range = [-45, 45];
+const domain = [0, 5]; 
+const range = [-1, 1];
 let domainScaleFactor = canvas.width / (domain[1] - domain[0]); 
 let rangeScaleFactor = canvas.height / (range[1] - range[0]); 
 
 const screen = new Screen();
-const nn = new NeuralNetwork(20);
+const nn = new NeuralNetwork();
 
-const plottedPoints = screen.generatePointsAlongCurve(80, (x) => 3 * Math.cbrt(x * 100), domain);
+const data = generatePointsAlongCurve(80, (x) => 0.2 * Math.cbrt(x * 100), domain);
 
 function render () {  
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -97,11 +97,11 @@ function render () {
   screen.drawLine(domain[0], 0, domain[1], 0);
   screen.drawLine(0, range[0], 0, range[1]);
 
-  plottedPoints.forEach(point => screen.plotPoint(point.x, point.y));
+  data.forEach(point => screen.plotPoint(point.x, point.y));
   
   let lineResolution = 600;
   for (let i = domain[0]; i < domain[1]; i += (domain[1] - domain[0]) / lineResolution) {
-    const y = nn.forward(i, updateActivations=false);
+    const y = nn.forward([i], grad=false);
     screen.plotPoint(i, y, 'red');
   }
 }
