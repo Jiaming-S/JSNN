@@ -111,7 +111,7 @@ class NeuralNetwork {
     return l3.flatten().tolist();
   } 
 
-  _nonlin(l0, deriv=false, type='relu') {
+  _nonlin(l0, deriv=false, type='leakyrelu') {
     if (type === 'sigmoid') {
       if (deriv) { 
         return l0.multiply(nj.ones(l0.shape).subtract(l0));
@@ -137,6 +137,17 @@ class NeuralNetwork {
       }
       else {
         return nj.clip(l0, 0, 999);
+      }
+    }
+    if (type === 'leakyrelu') {
+      if (deriv) {
+        let l0_copy = l0.clone();
+        l0_copy = l0_copy.multiply(0.01);
+        l0_copy = l0_copy.add(1);
+        return nj.clip(l0_copy, 0.01, 999);
+      }
+      else {
+        return nj.clip(l0, 0.01, 999);
       }
     }
   }
