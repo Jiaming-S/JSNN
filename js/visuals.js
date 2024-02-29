@@ -101,7 +101,7 @@ function render () {
   
   let lineResolution = 600;
   for (let i = domain[0]; i < domain[1]; i += (domain[1] - domain[0]) / lineResolution) {
-    const y = nn.forward([i], grad=false);
+    const y = nn.forward(nj.array(i), grad=false);
     screen.plotPoint(i, y, 'red');
   }
 }

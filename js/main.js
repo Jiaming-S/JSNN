@@ -2,7 +2,7 @@
 
 function main(args=null) {
   let epochs = args?.epochs ?? 10;
-  let batch_size = args?.bs ?? 2;
+  let batch_size = args?.bs ?? 1;
 
   for (let i = 0; i < epochs; i++) {
     data.sort((a, b) => 0.5 - Math.random());
@@ -17,8 +17,8 @@ function main(args=null) {
 
     let curEpochError = 0;
     for (let j = 0; j < x.shape[0]; j += batch_size) {
-      let x_batch = x.slice([j, j + batch_size]).reshape(batch_size, 1);
-      let y_batch = y.slice([j, j + batch_size]).reshape(batch_size, 1).T;
+      let x_batch = nj.array(x.tolist().slice(j, j + batch_size)).reshape(batch_size, 1);
+      let y_batch = nj.array(y.tolist().slice(j, j + batch_size)).reshape(batch_size, 1).T;
       let error = nn.forward(x_batch, true, y_batch);
       curEpochError += error;
     }
