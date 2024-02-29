@@ -1,12 +1,13 @@
 
 class NeuralNetwork {
   constructor() {
-    this.syn0 = nj.random([2, 3]).multiply(10).subtract(5);
-    this.syn1 = nj.random([4, 3]).multiply(10).subtract(5);
-    this.syn2 = nj.random([4, 1]).multiply(10).subtract(5);
+    const std = 1;
+    this.syn0 = nj.random([2, 3]).multiply(std * 2).subtract(std);
+    this.syn1 = nj.random([4, 3]).multiply(std * 2).subtract(std);
+    this.syn2 = nj.random([4, 1]).multiply(std * 2).subtract(std);
   }
 
-  forward(x, grad=false, y=null) {
+  forward(x, grad=false, y=null, lr=0.1) {
     let appendBiases = (arr) => {
       arr = arr.tolist();
       if (grad) arr.forEach(row => row.push(1));
@@ -40,11 +41,16 @@ class NeuralNetwork {
       y = nj.array(y).T;
 
 
+      // console.log("-----")  
       // console.log("layer 0:\n", l0.inspect());
       // console.log("layer 1:\n", l1.inspect());
       // console.log("layer 2:\n", l2.inspect());
       // console.log("layer 3:\n", l3.inspect());
-      // console.log("y:\n", y.inspect());
+      // console.log("y:\n", y.inspect()); 
+      // console.log("l0 raw\n", l0);
+      // console.log("l1 raw\n", l1);
+      // console.log("l2 raw\n", l2);
+      // console.log("l3 raw\n", l3);
 
       let l3_error = y.subtract(l3);
       let l3_delta = l3_error.multiply(this._nonlin(l3, true));
@@ -58,30 +64,54 @@ class NeuralNetwork {
       let l2_error = l3_delta.dot(this.syn2.T);
       let l2_delta = l2_error.multiply(this._nonlin(l2, true));
 
+      l2_delta = removeBiases(l2_delta);
+
       /// --- 
-      // console.log(l2_delta.inspect());
-      // console.log("after remove bias:", removeBiases(l2_delta).inspect());
+      // console.log(l2_delta.inspect());  
       // console.log(this.syn1.T.inspect()); 
       // console.log(l2_delta.dot(this.syn1.T).inspect()); 
       /// ---   
-
-      l2_delta = removeBiases(l2_delta);
 
       let l1_error = l2_delta.dot(this.syn1.T);
       let l1_delta = l1_error.multiply(this._nonlin(l1, true));
 
       l1_delta = removeBiases(l1_delta);
 
-      this.syn2 = this.syn2.add(l2.T.dot(l3_delta));
-      this.syn1 = this.syn1.add(l1.T.dot(l2_delta));
-      this.syn0 = this.syn0.add(l0.T.dot(l1_delta));
+      // ---
+      // console.log(l3_delta.inspect());
+      // console.log(l2_delta.inspect());
+      // console.log(l1_delta.inspect());
+      // ---
+
+      // ---
+      // console.log("synapses before");
+      // console.log(this.syn2.inspect());
+      // console.log(this.syn1.inspect());
+      // console.log(this.syn0.inspect());
+      // ---
+
+      this.syn2 = this.syn2.add(l2.T.dot(l3_delta).multiply(lr));
+      this.syn1 = this.syn1.add(l1.T.dot(l2_delta).multiply(lr));
+      this.syn0 = this.syn0.add(l0.T.dot(l1_delta).multiply(lr));
+
+      // ---
+      // console.log("synapses after");
+      // console.log(this.syn2.inspect());
+      // console.log(this.syn1.inspect());
+      // console.log(this.syn0.inspect());
+      // ---
+
+      // console.log(l3.inspect());
+      // console.log(y.inspect());
+      // console.log(y.subtract(l3).pow(2).mean());
+      // console.log("-----")  
 
       return y.subtract(l3).pow(2).mean();
     }
     return l3.flatten().tolist();
   } 
 
-  _nonlin(l0, deriv=false, type='sigmoid') {
+  _nonlin(l0, deriv=false, type='relu') {
     if (type === 'sigmoid') {
       if (deriv) { 
         return l0.multiply(nj.ones(l0.shape).subtract(l0));
@@ -100,7 +130,10 @@ class NeuralNetwork {
     }
     if (type === 'relu') {
       if (deriv) {
-        return nj.clip(l0, 0, 999).divide(l0);
+        let l0_copy = l0.clone();
+        l0_copy = l0_copy.multiply(0);
+        l0_copy = l0_copy.add(1);
+        return nj.clip(l0_copy, 0, 999);
       }
       else {
         return nj.clip(l0, 0, 999);

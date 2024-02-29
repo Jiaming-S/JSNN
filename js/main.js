@@ -4,6 +4,10 @@ function main(args=null) {
   let epochs = args?.epochs ?? 10;
   let batch_size = args?.bs ?? 1;
 
+  // console.log("syn 0:\n", nn.syn0.inspect());
+  // console.log("syn 1:\n", nn.syn1.inspect()); 
+  // console.log("syn 2:\n", nn.syn2.inspect());
+
   for (let i = 0; i < epochs; i++) {
     data.sort((a, b) => 0.5 - Math.random());
 
@@ -25,6 +29,11 @@ function main(args=null) {
     console.log("Epoch: ", i+1, " Error: ", curEpochError);
   }
 
+  // console.log("syn 0:\n", nn.syn0.inspect());
+  // console.log("syn 1:\n", nn.syn1.inspect()); 
+  // console.log("syn 2:\n", nn.syn2.inspect());
+
   render();
 }
+
 
